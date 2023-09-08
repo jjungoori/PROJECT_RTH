@@ -3,8 +3,12 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
+    public AudioSource musicSource;
     public GameObject notePrefab; // Reference to your note prefab
-    public float[] noteTimes; // The times at which notes should spawn
+    public float[] noteTimes = new float[]
+    {
+        1,2,3,4,5,6
+    }; // The times at which notes should spawn
     public float timingThreshold = 0.2f; // The timing tolerance for hitting a note
     private float customTimer = 0f; // Your custom timer
     private List<Note> activeNotes = new List<Note>(); // List of active notes
@@ -28,7 +32,11 @@ public class GameManager : MonoBehaviour
             // Spawn the note and add it to the list of active notes
             GameObject spawnedNote = Instantiate(notePrefab, new Vector3(10, 0, 0), Quaternion.identity);
             activeNotes.Add(new Note { gameObject = spawnedNote, targetHitTime = noteTimes[nextNoteIndex] });
-            
+
+            foreach (var t in activeNotes)
+            {
+                t.gameObject.transform.position += new Vector3(10, 0, 0);
+            }
             // Move to the next note
             nextNoteIndex++;
         }
