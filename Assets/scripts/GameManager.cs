@@ -4,44 +4,56 @@ using UnityEngine;
 public class GameManager : MonoBehaviour
 {
     public AudioSource musicSource;
-    public GameObject notePrefab; // Reference to your note prefab
-    public float[] noteTimes = new float[]
-    {
-        1,2,3,4,5,6
-    }; // The times at which notes should spawn
-    public float timingThreshold = 0.2f; // The timing tolerance for hitting a note
-    private float customTimer = 0f; // Your custom timer
-    private List<Note> activeNotes = new List<Note>(); // List of active notes
-    private int nextNoteIndex = 0; // Index of the next note to spawn
+    public GameObject notePrefab;
+    public int[] noteSampleTimes;
+    public int timingThresholdInSamples = 22050;
+    private List<Note> activeNotes = new List<Note>();
+    private int nextNoteIndex = 0;
+
+    public SpawnArea spawnArea;
 
     [System.Serializable]
     public class Note
     {
         public GameObject gameObject;
-        public float targetHitTime;
+        public int targetHitSample;
+        public bool colorChanged = false;
     }
+
+    private void Start()
+    {
+        int numberOfNotes = Mathf.Min(spawnArea.spawnPositions.Count, 20);  // Choose the smaller between spawnPositions.Count and 20
+        noteSampleTimes = new int[numberOfNotes];
+        int currentSample = 0;
+        int sampleRate = musicSource.clip.frequency;
+
+        for (int i = 0; i < numberOfNotes; i++)
+        {
+            currentSample += Mathf.FloorToInt(Random.Range(1f, 3f) * sampleRate);
+            noteSampleTimes[i] = currentSample;
+
+            Transform spawnPos = spawnArea.spawnPositions[i];
+            GameObject spawnedNote = Instantiate(notePrefab, spawnPos.position, Quaternion.identity, spawnArea.transform); // Set spawnArea.transform as parent
+            activeNotes.Add(new Note { gameObject = spawnedNote, targetHitSample = currentSample });
+        }
+    }
+
+
 
     private void Update()
     {
-        // Increment the custom timer
-        customTimer += Time.deltaTime;
+        int currentSampleTime = musicSource.timeSamples;
 
-        // Check if it's time to spawn the next note
-        if (nextNoteIndex < noteTimes.Length && customTimer >= noteTimes[nextNoteIndex])
+        foreach (Note note in activeNotes)
         {
-            // Spawn the note and add it to the list of active notes
-            GameObject spawnedNote = Instantiate(notePrefab, new Vector3(10, 0, 0), Quaternion.identity);
-            activeNotes.Add(new Note { gameObject = spawnedNote, targetHitTime = noteTimes[nextNoteIndex] });
-
-            foreach (var t in activeNotes)
+            if (!note.colorChanged && currentSampleTime >= note.targetHitSample)
             {
-                t.gameObject.transform.position += new Vector3(10, 0, 0);
+                // note.gameObject.SetActive(true);  // Activate the note
+                note.gameObject.GetComponent<Renderer>().material.color = Color.red;  // Change color to red
+                note.colorChanged = true;
             }
-            // Move to the next note
-            nextNoteIndex++;
         }
 
-        // Your existing input check and hit detection logic
         if (Input.GetKeyDown(KeyCode.Space))
         {
             CheckForHit();
@@ -50,33 +62,30 @@ public class GameManager : MonoBehaviour
 
     private void CheckForHit()
     {
-        float currentTime = musicSource.time;
+        int currentSampleTime = musicSource.timeSamples;
         Note closestNote = null;
-        float closestTimeDifference = timingThreshold;
+        int closestSampleDifference = timingThresholdInSamples;
 
         foreach (Note note in activeNotes)
         {
-            float timeDifference = Mathf.Abs(currentTime - note.targetHitTime);
+            int sampleDifference = Mathf.Abs(currentSampleTime - note.targetHitSample);
 
-            if (timeDifference < closestTimeDifference)
+            if (sampleDifference < closestSampleDifference)
             {
                 closestNote = note;
-                closestTimeDifference = timeDifference;
+                closestSampleDifference = sampleDifference;
             }
         }
 
         if (closestNote != null)
         {
-            // The player hit the note within the allowed time window
             Destroy(closestNote.gameObject);
             activeNotes.Remove(closestNote);
-
             // Update score, combo, etc.
         }
         else
         {
-            // The player missed
-            // Decrease health, reset combo, etc.
+            // The player missed, decrease health, reset combo, etc.
         }
     }
 }
