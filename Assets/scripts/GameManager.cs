@@ -26,7 +26,7 @@ public class GameManager : MonoBehaviour
         noteSampleTimes = new int[numberOfNotes];
         int currentSample = 0;
         int sampleRate = musicSource.clip.frequency;
-        float beatsPerMinute = 134; // BPM 값을 설정합니다. 필요에 따라 이 값을 변경할 수 있습니다.
+        float beatsPerMinute = 268; // BPM 값을 설정합니다. 필요에 따라 이 값을 변경할 수 있습니다.
         float beatInterval = 60f / beatsPerMinute; // 한 박자의 시간 간격을 계산합니다.
 
         for (int i = 0; i < numberOfNotes; i++)
@@ -34,8 +34,12 @@ public class GameManager : MonoBehaviour
             currentSample += Mathf.FloorToInt(beatInterval * sampleRate);  // 한 박자마다 샘플을 설정합니다.
             noteSampleTimes[i] = currentSample;
 
-            Vector3 spawnPos = spawnArea.spawnPositions[i];
-            GameObject spawnedNote = Instantiate(notePrefab, spawnPos, Quaternion.identity, spawnArea.transform);
+            Vector3 localSpawnPos = spawnArea.spawnPositions[i];
+            // Transform the local spawn position to world position based on the spawnArea's position and rotation
+            //Vector3 spawnPos = spawnArea.transform.TransformPoint(localSpawnPos);
+    
+            GameObject spawnedNote = Instantiate(notePrefab, localSpawnPos, Quaternion.identity);
+            spawnedNote.transform.SetParent(spawnArea.transform, true);
             activeNotes.Add(new Note { gameObject = spawnedNote, targetHitSample = currentSample });
         }
     }
@@ -83,7 +87,8 @@ public class GameManager : MonoBehaviour
 
         if (closestNote != null)
         {
-            Destroy(closestNote.gameObject);
+            //Destroy(closestNote.gameObject);
+            closestNote.gameObject.GetComponent<Renderer>().material.color = Color.green;
             activeNotes.Remove(closestNote);
             // Update score, combo, etc.
         }
