@@ -22,21 +22,25 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        int numberOfNotes = Mathf.Min(spawnArea.spawnPositions.Count, 20);  // Choose the smaller between spawnPositions.Count and 20
+        int numberOfNotes = Mathf.Min(spawnArea.spawnPositions.Count, 200);
         noteSampleTimes = new int[numberOfNotes];
         int currentSample = 0;
         int sampleRate = musicSource.clip.frequency;
+        float beatsPerMinute = 134; // BPM 값을 설정합니다. 필요에 따라 이 값을 변경할 수 있습니다.
+        float beatInterval = 60f / beatsPerMinute; // 한 박자의 시간 간격을 계산합니다.
 
         for (int i = 0; i < numberOfNotes; i++)
         {
-            currentSample += Mathf.FloorToInt(Random.Range(1f, 3f) * sampleRate);
+            currentSample += Mathf.FloorToInt(beatInterval * sampleRate);  // 한 박자마다 샘플을 설정합니다.
             noteSampleTimes[i] = currentSample;
 
-            Transform spawnPos = spawnArea.spawnPositions[i];
-            GameObject spawnedNote = Instantiate(notePrefab, spawnPos.position, Quaternion.identity, spawnArea.transform); // Set spawnArea.transform as parent
+            Vector3 spawnPos = spawnArea.spawnPositions[i];
+            GameObject spawnedNote = Instantiate(notePrefab, spawnPos, Quaternion.identity, spawnArea.transform);
             activeNotes.Add(new Note { gameObject = spawnedNote, targetHitSample = currentSample });
         }
     }
+
+
 
 
 
