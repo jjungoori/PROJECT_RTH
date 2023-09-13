@@ -64,7 +64,14 @@ public class GameManager : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            CheckForHit();
+            if (GetComponent<AudioSource>().isPlaying)
+            {
+                CheckForHit();
+            }
+            else
+            {
+                GetComponent<AudioSource>().Play();
+            }
         }
     }
 
